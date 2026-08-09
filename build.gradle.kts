@@ -9,6 +9,7 @@ plugins {
 
 dependencies {
     dokka(projects.piktoCore)
+    dokka(projects.piktoImages)
 }
 
 dokka {
