@@ -68,9 +68,5 @@ request what you ran it on.
 
 ## Releasing
 
-Maintainers only.
-
-1. Set `VERSION_NAME` in `gradle.properties` to the release version.
-2. Move the "Unreleased" section of `CHANGELOG.md` under the new version heading.
-3. Tag `vX.Y.Z` and push it. The release workflow publishes to Maven Central.
-4. Set `VERSION_NAME` back to the next `-SNAPSHOT`.
+Maintainers only. See [RELEASING.md](RELEASING.md) for the Sonatype account setup and the
+per-release steps.
