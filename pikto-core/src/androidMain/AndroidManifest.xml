@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Declared here so that adding Pikto is enough to read the library. Every one of these is a
+      read permission and none is granted without the user tapping through the system prompt.
+
+      Remove any you do not want with tools:node="remove" in your own manifest — for example an
+      images-only app can drop READ_MEDIA_VIDEO.
+    -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+
+    <application>
+        <!--
+          Captures the application context at process start so PhotoLibrary() works with no
+          arguments from commonMain. Remove the meta-data below with tools:node="remove" and
+          build the library with PhotoLibrary(context) instead.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="pikto.PiktoInitializer"
+                android:value="androidx.startup" />
+        </provider>
+    </application>
+</manifest>
