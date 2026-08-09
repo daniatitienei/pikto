@@ -72,9 +72,9 @@ Take only what you need. Each one is published separately.
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.daniatitienei:pikto-core:0.1.0")
-            implementation("io.github.daniatitienei:pikto-images:0.1.0")
-            implementation("io.github.daniatitienei:pikto-video:0.1.0")
+            implementation("io.github.daniatitienei:pikto-core:1.0.0")
+            implementation("io.github.daniatitienei:pikto-images:1.0.0")
+            implementation("io.github.daniatitienei:pikto-video:1.0.0")
         }
     }
 }

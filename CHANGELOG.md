@@ -6,9 +6,12 @@ All notable changes to Pikto are recorded here. The format follows
 
 ## Unreleased
 
-## 0.1.0
+## 1.0.0
 
 First release. Android and iOS, `iosArm64` and `iosSimulatorArm64`.
+
+Every public declaration is covered by semantic versioning from here on: no breaking change to
+anything listed below without a 2.0.0.
 
 ### pikto-core
 
