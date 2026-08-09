@@ -31,3 +31,4 @@ dependencyResolutionManagement {
 
 include(":pikto-core")
 include(":pikto-images")
+include(":pikto-video")
