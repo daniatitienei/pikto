@@ -1,0 +1,36 @@
+[versions]
+agp = "9.0.1"
+android-compileSdk = "36"
+android-minSdk = "24"
+androidx-activity = "1.13.0"
+androidx-core = "1.17.0"
+androidx-lifecycle = "2.11.0-beta01"
+androidx-startup = "1.2.0"
+composeMultiplatform = "1.11.1"
+dokka = "2.0.0"
+kotlin = "2.4.10"
+kotlinxCoroutines = "1.10.2"
+mavenPublish = "0.30.0"
+media3 = "1.8.0"
+
+[libraries]
+androidx-activity = { module = "androidx.activity:activity", version.ref = "androidx-activity" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
+androidx-startup = { module = "androidx.startup:startup-runtime", version.ref = "androidx-startup" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+
+[plugins]
+androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }

@@ -1,0 +1,11 @@
+.gradle/
+build/
+captures/
+local.properties
+.kotlin/
+.idea/
+*.iml
+.DS_Store
+xcuserdata/
+*.hprof
+hs_err_pid*.log
