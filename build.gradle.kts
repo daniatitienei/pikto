@@ -7,6 +7,10 @@ plugins {
     alias(libs.plugins.dokka)
 }
 
+dependencies {
+    dokka(projects.piktoCore)
+}
+
 dokka {
     moduleName = "Pikto"
 }
