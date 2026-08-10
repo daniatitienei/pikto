@@ -1,5 +1,9 @@
 plugins {
     alias(libs.plugins.androidApplication)
+    // MainActivity calls setContent with a composable lambda, so this module needs the Compose
+    // compiler too — without it the lambda compiles as a plain Function0 and setContent blows up
+    // with NoSuchMethodError at runtime.
+    alias(libs.plugins.composeCompiler)
 }
 
 /**
