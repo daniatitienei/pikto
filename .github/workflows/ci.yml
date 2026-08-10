@@ -26,6 +26,11 @@ jobs:
       - name: Build and test every target
         run: ./gradlew build --stacktrace
 
+      # `build` stops at the klib, so link the sample's framework too: it is the step that would
+      # catch an iOS-only break in the API the sample uses.
+      - name: Link the sample's iOS framework
+        run: ./gradlew :sample:shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace
+
       - name: Build the API docs
         run: ./gradlew dokkaGenerate --stacktrace
 

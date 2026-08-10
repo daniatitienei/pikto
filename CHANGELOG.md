@@ -6,6 +6,20 @@ All notable changes to Pikto are recorded here. The format follows
 
 ## Unreleased
 
+### Fixed
+
+- **pikto-video, iOS:** the player no longer swallows touches. Compose wraps every interop view in
+  a container of its own and that container claimed every touch landing on the clip, so a pager or
+  a swipe deck under a `VideoPlayer` stopped responding as soon as a video was on screen.
+- **pikto-video, iOS:** the player's own background is black rather than transparent. An interop
+  view is a hole cut in the Compose canvas, so the bars around a letterboxed clip showed the
+  window background — white — instead of whatever was drawn underneath.
+
+### Added
+
+- A runnable sample app under `sample/`, built against the published coordinates and wired to the
+  local projects inside this repo. See `sample/README.md`.
+
 ## 1.0.0
 
 First release. Android and iOS, `iosArm64` and `iosSimulatorArm64`.

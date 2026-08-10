@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -44,6 +45,7 @@ import platform.Foundation.NSNotificationCenter
 import platform.Photos.PHImageManager
 import platform.Photos.PHVideoRequestOptions
 import platform.QuartzCore.CATransaction
+import platform.UIKit.UIColor
 import platform.UIKit.UIView
 import platform.darwin.NSObjectProtocol
 import kotlin.coroutines.resume
@@ -176,6 +178,12 @@ public actual fun VideoPlayer(
         // and the transforms of the layer it nominally lives in, so this is the only instruction
         // about being on screen that it actually takes.
         update = { it.setHidden(!isVisible) },
+        // The player draws; it does not handle gestures. Compose wraps every interop view in a
+        // container of its own, and that wrapper is what claims touches — clearing
+        // `userInteractionEnabled` on the view inside it changes nothing. Left interactive, the
+        // wrapper swallows every touch that lands on the clip, so a pager or a swipe deck
+        // underneath silently stops responding the moment a video is on screen.
+        properties = UIKitInteropProperties(interactionMode = null),
     )
 }
 
@@ -216,6 +224,10 @@ private class PlayerContainerView : UIView(frame = CGRectZero.readValue()) {
 
     init {
         layer.addSublayer(playerLayer)
+        // An interop view is a hole cut in the Compose canvas, so whatever Compose drew underneath
+        // is not what shows around a letterboxed clip: the window background is, and that is white.
+        // Black is what every video surface on both platforms fills its bars with.
+        backgroundColor = UIColor.blackColor
         // Starts out of the way: nothing is shown until a clip is ready, so an empty layer cannot
         // flash over whatever is underneath on the way in.
         setHidden(true)

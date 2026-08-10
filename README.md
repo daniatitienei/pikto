@@ -65,6 +65,19 @@ Take only what you need. Each one is published separately.
 | `pikto-images` | Compose Multiplatform composables and `ImageBitmap` decoding for thumbnails and full-size images. | `pikto-core`, Compose Multiplatform |
 | `pikto-video` | A Compose Multiplatform video player for library clips, with next-clip preloading. | `pikto-core`, Compose Multiplatform, Media3 on Android |
 
+## The sample app
+
+A runnable gallery using all three artifacts lives in [`sample/`](sample/): grid, full-screen
+viewer, video playback, and deleting one or many. It builds for Android and iOS from one
+`commonMain` source set.
+
+```
+./gradlew :sample:androidApp:installDebug     # Android
+open sample/iosApp/iosApp.xcodeproj           # iOS
+```
+
+See [`sample/README.md`](sample/README.md).
+
 ## Install
 
 ```kotlin
