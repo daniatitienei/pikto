@@ -1,11 +1,27 @@
-# Pikto
+<div align="center">
 
-**A Compose Multiplatform photo gallery library.** Read the device photo library, show thumbnails,
-play videos and delete assets, all from `commonMain`. One Kotlin Multiplatform API over MediaStore
-on Android and PhotoKit on iOS.
+# 📸 Pikto
+
+**The device photo library, in Compose Multiplatform.**
+
+Read photos, show thumbnails, play videos and delete assets, *all from `commonMain`*.<br>
+One Kotlin API over **MediaStore** on Android and **PhotoKit** on iOS.
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.daniatitienei/pikto-core.svg?label=Maven%20Central)](https://central.sonatype.com/search?q=g:io.github.daniatitienei)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS-brightgreen.svg)
+
+[Quick start](#-quick-start) •
+[Reading photos](#-reading-the-library) •
+[Showing photos](#-showing-photos) •
+[Playing video](#-playing-video) •
+[Sample app](#-sample-app)
+
+</div>
+
+---
+
+## ✨ A whole gallery, in one composable
 
 ```kotlin
 @Composable
@@ -32,54 +48,41 @@ fun Gallery() {
 }
 ```
 
-That is the whole thing, on both platforms. Nothing above it is Android-only or iOS-only: no
-`expect`/`actual` of your own to maintain, and no Swift file on the side.
+**That's it, on both platforms.** No `expect`/`actual` of your own, no Swift file on the side.
 
----
+## 💡 Why Pikto
 
-## Why this exists
+`MediaStore` and `PhotoKit` disagree about almost everything: what an asset id is, whether sizes
+are cheap, who shows the delete confirmation, what a thumbnail costs. Most apps end up writing it
+twice, and the two copies drift apart.
 
-Photo library access is one of the last big holes in Kotlin Multiplatform. `MediaStore` and
-`PhotoKit` disagree about almost everything: what an asset id is, whether sizes are cheap, whether
-an asset can belong to more than one album, who shows the delete confirmation, and what a
-thumbnail costs. Writing that twice per app is the norm, and both copies drift.
+Pikto was pulled out of a shipping photo cleaner and generalised. It's opinionated about the two
+things that actually break at scale:
 
-Pikto is the abstraction, taken from a shipping photo cleaner and generalised. Two things go wrong
-at scale, and it is opinionated about both.
+- ⚡ **Nothing loads eagerly.** The library arrives in batches you paint as they land. The first
+  batch is deliberately tiny, because it *is* your time-to-first-pixel. Fifty thousand photos never
+  sit in one list you had to wait for.
+- 🧠 **Decoding is shared, bounded and cached.** One decode per asset however many composables ask,
+  a hard cap on concurrent decodes, separate memory budgets for thumbnails and full images, and an
+  on-disk thumbnail cache so a cold start is a file read.
 
-The first is eager loading, which Pikto never does. The library arrives in batches you can paint as
-they land, and the first batch is deliberately tiny because it is your entire time-to-first-pixel
-budget. A library of fifty thousand assets never exists as one list you had to wait for.
-
-The second is decoding, which is shared, bounded and cached. One decode per asset, no matter how
-many composables ask for it, with a hard cap on how many run at once. Thumbnails and full images
-get separate memory budgets, and thumbnails also get an on-disk cache, so a cold start is a file
-read rather than a re-decode.
-
-## Modules
+## 🧩 Modules
 
 Take only what you need. Each one is published separately.
 
-| Artifact | What it gives you | Pulls in |
+| Artifact | What you get | Pulls in |
 | --- | --- | --- |
-| `pikto-core` | Querying, permissions, deleting. No UI dependency at all, so it works with Compose Multiplatform, SwiftUI or Views. | coroutines |
-| `pikto-images` | Compose Multiplatform composables and `ImageBitmap` decoding for thumbnails and full-size images. | `pikto-core`, Compose Multiplatform |
-| `pikto-video` | A Compose Multiplatform video player for library clips, with next-clip preloading. | `pikto-core`, Compose Multiplatform, Media3 on Android |
+| 📚 `pikto-core` | Querying, permissions, deleting. No UI dependency, so it also works with SwiftUI or Views. | coroutines |
+| 🖼️ `pikto-images` | Composables and `ImageBitmap` decoding for thumbnails and full-size images. | `pikto-core`, Compose Multiplatform |
+| 🎬 `pikto-video` | A video player for library clips, with next-clip preloading. | `pikto-core`, Compose Multiplatform, Media3 on Android |
 
-## The sample app
+---
 
-A runnable gallery using all three artifacts lives in [`sample/`](sample/): grid, full-screen
-viewer, video playback, and deleting one or many. It builds for Android and iOS from one
-`commonMain` source set.
+## 🚀 Quick start
 
-```
-./gradlew :sample:androidApp:installDebug     # Android
-open sample/iosApp/iosApp.xcodeproj           # iOS
-```
+Three steps and you're showing photos.
 
-See [`sample/README.md`](sample/README.md).
-
-## Install
+### 1. Add the dependencies
 
 ```kotlin
 // build.gradle.kts
@@ -87,8 +90,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation("io.github.daniatitienei:pikto-core:1.0.1")
-            implementation("io.github.daniatitienei:pikto-images:1.0.1")
-            implementation("io.github.daniatitienei:pikto-video:1.0.1")
+            implementation("io.github.daniatitienei:pikto-images:1.0.1")  // optional
+            implementation("io.github.daniatitienei:pikto-video:1.0.1")   // optional
         }
     }
 }
@@ -96,9 +99,7 @@ kotlin {
 
 Targets: `android`, `iosArm64`, `iosSimulatorArm64`.
 
-### Android setup
-
-One line, in your activity:
+### 2. 🤖 Android: one line in your activity
 
 ```kotlin
 class MainActivity : ComponentActivity() {
@@ -110,24 +111,28 @@ class MainActivity : ComponentActivity() {
 }
 ```
 
-Showing the permission prompt and the delete confirmation sheet are both activity results, and
-Android only lets those be registered before the activity reaches STARTED. That is a call the
-library cannot make for you. Everything unregisters on destroy, so it is safe across
-configuration changes and across multiple activities.
+<details>
+<summary><b>Why is this needed?</b></summary>
 
-Reading the library needs none of this. Skip it if you never request permission and never delete.
+The permission prompt and the delete confirmation sheet are both activity results, and Android
+only lets those be registered before the activity reaches STARTED. That's a call the library can't
+make for you. Everything unregisters on destroy, so it's safe across configuration changes and
+multiple activities.
 
-The read permissions are declared in Pikto's own manifest and merge into your app, so there is
-nothing to add. Drop the ones you do not want:
+</details>
+
+> [!TIP]
+> Only **reading** the library? You can skip `installPikto()`. It's needed only to request
+> permission or delete.
+
+The read permissions come from Pikto's own manifest and merge into your app, so there's nothing to
+add. To drop one you don't want:
 
 ```xml
 <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
 ```
 
-### iOS setup
-
-Add the usage descriptions to your `Info.plist`. iOS terminates an app that touches the photo
-library without them:
+### 3. 🍎 iOS: two keys in `Info.plist`
 
 ```xml
 <key>NSPhotoLibraryUsageDescription</key>
@@ -136,20 +141,23 @@ library without them:
 <string>So you can save photos back to your library.</string>
 ```
 
-No other setup. Nothing to call, no Swift to write.
+> [!WARNING]
+> iOS **terminates** an app that touches the photo library without these keys.
+
+No other setup. Nothing to call, no Swift to write. 🎉
 
 ---
 
-## Reading the library
+## 📚 Reading the library
 
-`PhotoLibrary` is the whole surface. Build one and keep it. It holds no per-call state, so a single
-instance for the lifetime of the app is the intended use.
+`PhotoLibrary` is the whole surface. **Build one and keep it.** It holds no per-call state, so one
+instance for the app's lifetime is the intended use.
 
 ```kotlin
 val library = PhotoLibrary()
 ```
 
-### Permission
+### 🔐 Permission
 
 ```kotlin
 when (library.ensurePermission()) {
@@ -160,41 +168,41 @@ when (library.ensurePermission()) {
 }
 ```
 
-`ensurePermission()` returns the current status, prompting only if nobody has been asked yet.
-`canRead` collapses GRANTED and LIMITED for the common case.
+`ensurePermission()` returns the current status and prompts *only* if nobody has been asked yet.
+For the common case, `canRead` is true for both `GRANTED` and `LIMITED`.
 
-Reach for it rather than `permissionStatus()` whenever a refusal should send the user to Settings.
-`permissionStatus()` shows no UI, and that is exactly why it cannot tell a refusal from a question
-never asked: iOS records the refusal and reports `DENIED`, while Android records only that the
-permission is missing and reports `NOT_DETERMINED` in both cases. Showing the prompt is what
-separates them. So `DENIED` is dependable after `ensurePermission()`, and iOS-only before it.
+> [!IMPORTANT]
+> **Use `ensurePermission()`, not `permissionStatus()`, when a refusal should send the user to
+> Settings.** `permissionStatus()` never shows UI, so it can't tell "refused" from "never asked":
+> iOS reports `DENIED`, but Android reports `NOT_DETERMINED` for both. Only showing the prompt
+> separates them. So `DENIED` is reliable *after* `ensurePermission()`, and iOS-only before it.
 
-`LIMITED` is a permanent state on both platforms, not a step towards `GRANTED`. The user picked
-some photos and everything else stays invisible. Treat it as a working state and offer a way to
-widen the selection, never as a failure to retry.
+> [!NOTE]
+> `LIMITED` is a **permanent** state on both platforms, not a step towards `GRANTED`. The user
+> picked some photos and the rest stays invisible. Treat it as a working state and offer a way to
+> widen the selection, never as a failure to retry.
 
-### The library as a growing list
+### 📜 Photos as a growing list *(the usual path)*
 
-The convenience path. Each emission is everything known so far, in order, with sizes filled in as
-they arrive. The last emission is the whole library.
+Each emission is everything known so far, in order, with sizes filled in as they arrive. The last
+emission is the whole library.
 
 ```kotlin
 library.collectAssets().collect { assets ->
-    // First emission lands in a frame or two. Later ones grow it.
+    // The first emission lands in a frame or two. Later ones grow it.
 }
 ```
 
-### The library as one list
-
-For background work, where nothing is waiting to be painted:
+### 📦 Photos as one list *(background work only)*
 
 ```kotlin
 val everything: List<PhotoAsset> = library.loadAll()
 ```
 
-This waits for the last asset before returning the first. Never put it in front of UI.
+> [!CAUTION]
+> This waits for the *last* asset before returning the first. **Never put it in front of UI.**
 
-### Filtering and tuning
+### 🎛️ Filtering and tuning
 
 ```kotlin
 val query = MediaQuery(
@@ -208,22 +216,19 @@ val query = MediaQuery(
 library.collectAssets(query).collect { videos -> }
 ```
 
-`MediaQuery.Images` and `MediaQuery.Videos` are presets for the common two.
+`MediaQuery.Images` and `MediaQuery.Videos` are ready-made presets.
 
-`includeSizes` is the one worth understanding. On Android the file size comes free in the same
-cursor row, so it costs nothing either way. On iOS every size is a separate disk read through
-`PHAssetResource`, which is the difference between enumerating a large library in milliseconds and
-in seconds. Sizes therefore always arrive *after* the assets, and if nothing on screen shows bytes,
-turn them off.
+Two flags have a real cost on iOS:
 
-`includeAlbums` is off for the same reason taken further: it is the most expensive pass on iOS by a
-wide margin. PhotoKit has no way to ask an asset which collections hold it, so building the mapping
-means walking every collection.
+| Flag | Android | iOS | Advice |
+| --- | --- | --- | --- |
+| `includeSizes` | Free, it's in the same cursor row | One disk read *per asset* through `PHAssetResource`: milliseconds become seconds | **Turn it off** if nothing on screen shows bytes. Sizes always arrive *after* the assets. |
+| `includeAlbums` | Cheap | The most expensive pass by far: PhotoKit can't ask an asset which albums hold it, so every album gets walked | **Off by default.** Turn it on only when you show albums. |
 
-### The raw stream
+### 🌊 The raw stream
 
-`collectAssets` is a fold over `stream()`. Collect the stream directly when you want albums, or
-when you want to react to each kind of update differently:
+`collectAssets` is a fold over `stream()`. Collect the stream directly when you want albums, or want
+to handle each kind of update differently:
 
 ```kotlin
 library.stream(MediaQuery(includeAlbums = true)).collect { update ->
@@ -235,11 +240,11 @@ library.stream(MediaQuery(includeAlbums = true)).collect { update ->
 }
 ```
 
-Emissions are ordered: every `Assets` arrives before the `Sizes` and `Albums` that describe it.
-The flow is cold and already confined to a background dispatcher, so collecting from the main
-thread is fine.
+- Emissions are **ordered**: every `Assets` arrives before the `Sizes` and `Albums` that describe it.
+- The flow is **cold** and already runs on a background dispatcher, so collecting from the main
+  thread is fine.
 
-### Deleting
+### 🗑️ Deleting
 
 ```kotlin
 when (library.delete(selectedIds)) {
@@ -249,12 +254,14 @@ when (library.delete(selectedIds)) {
 }
 ```
 
-Both platforms put a system confirmation sheet in front of this, so "the user said no" is an
-ordinary outcome and sits beside `Failed` rather than inside it. Neither platform deletes
-permanently: Android moves assets to the MediaStore trash and iOS to Recently Deleted, both
-recoverable for about thirty days.
+Both platforms show a system confirmation sheet first, so *"the user said no"* is an ordinary
+outcome. That's why `Cancelled` sits beside `Failed` rather than inside it.
 
-### What a `PhotoAsset` is
+> [!NOTE]
+> Nothing is deleted permanently. Android moves assets to the MediaStore trash and iOS to
+> *Recently Deleted*. Both are recoverable for about thirty days.
+
+### 🏷️ What a `PhotoAsset` is
 
 ```kotlin
 data class PhotoAsset(
@@ -269,12 +276,12 @@ data class PhotoAsset(
 )
 ```
 
-`id` is stable for as long as the asset exists on the device and means nothing off it. Do not
-parse it, sort by it, or use it as a cross-device key.
+`id` is stable for as long as the asset exists on the device, and means nothing anywhere else.
+**Don't parse it, sort by it, or use it as a cross-device key.**
 
 ---
 
-## Showing photos
+## 🌄 Showing photos
 
 ```kotlin
 PhotoImage(
@@ -286,35 +293,38 @@ PhotoImage(
 )
 ```
 
-The two sizes take different paths. `ImageSize.Thumbnail(sidePx)` goes through the platform's own
-thumbnailing and is cached to disk between launches, so the second cold start is a file read.
-`ImageSize.Full` asks the platform to render at screen resolution and is memory-cached only.
+The two sizes take different paths:
 
-The size is part of the cache key, so `Thumbnail(320)` and `Thumbnail(321)` share nothing. Pick a
-small number of sizes and reuse them.
+| Size | How it's made | Cached |
+| --- | --- | --- |
+| `ImageSize.Thumbnail(sidePx)` | The platform's own thumbnailing | 💾 Memory **and disk**, so the second cold start is a file read |
+| `ImageSize.Full` | Rendered by the platform at screen resolution | 🧠 Memory only |
 
-Need the bitmap rather than a composable that draws it?
+> [!TIP]
+> The size is part of the cache key, so `Thumbnail(320)` and `Thumbnail(321)` share nothing.
+> **Pick a few sizes and reuse them.**
+
+Need the bitmap itself rather than a composable that draws it?
 
 ```kotlin
 val bitmap: ImageBitmap? = rememberPhotoImage(asset.id, ImageSize.Full)
 ```
 
-### Prefetching
+### 🏎️ Prefetching
 
-The single biggest thing you can do for a scrolling grid. Warm the ids just outside the visible
-window:
+**The single biggest win for a scrolling grid.** Warm the ids just outside the visible window:
 
 ```kotlin
 PrefetchPhotos(assetIds = upcomingIds, size = ImageSize.Thumbnail(320))
 ```
 
-Re-issuing an overlapping window is cheap, so recomputing it on every scroll is the intended use.
-Ids already cached or already in flight cost nothing.
+Recomputing the window on every scroll is fine. That's the intended use: ids already cached or
+already in flight cost nothing.
 
-### Configuring the loader
+### ⚙️ Configuring the loader
 
-`PhotoImage` uses a process-wide loader with sensible defaults, created the first time anything
-asks for a photo. Override it when you want your own budgets:
+`PhotoImage` uses a process-wide loader with sensible defaults. Bring your own when you want
+different budgets:
 
 ```kotlin
 val loader = remember {
@@ -330,16 +340,18 @@ val loader = remember {
 ProvidePhotoImageLoader(loader) { App() }
 ```
 
-Keep one instance. A second loader is a second set of caches and a second writer to the same disk
-directory.
+> [!WARNING]
+> **Keep one instance.** A second loader means a second set of caches and a second writer to the
+> same disk directory.
 
-Pass `diskCache = PhotoDiskCache.None` to keep nothing on disk, or your own `PhotoDiskCache` to
-put it somewhere else. In tests, provide a fake `PhotoImageLoader` through
-`ProvidePhotoImageLoader` and nothing touches the platform at all.
+- `diskCache = PhotoDiskCache.None` keeps nothing on disk. Pass your own `PhotoDiskCache` to store
+  it somewhere else.
+- 🧪 **In tests**, provide a fake `PhotoImageLoader` through `ProvidePhotoImageLoader` and nothing
+  touches the platform.
 
 ---
 
-## Playing video
+## 🎬 Playing video
 
 ```kotlin
 val state = rememberVideoPlaybackState(asset.id)
@@ -369,33 +381,45 @@ Slider(
 )
 ```
 
-A hand-rolled player tends to get three things wrong here.
+Three things a hand-rolled player usually gets wrong, and how Pikto handles them:
 
-Mounting is the one that costs the most. A `null` `assetId` means "nothing to play", and the player
-is kept alive and idle rather than torn down. Building and releasing a player is main-thread work
-measured in hundreds of milliseconds on both platforms, so doing it per clip freezes the screen.
-Keep the composable in the tree and swap the id underneath it.
+**1. 📌 Keep it mounted.** Creating or releasing a player is main-thread work measured in
+*hundreds of milliseconds* on both platforms, so doing it per clip freezes the screen. A `null`
+`assetId` means "nothing to play" and keeps the player alive and idle. Keep the composable in the
+tree and swap the id underneath it.
 
-Preloading is the cheapest win, and `nextAssetId` is where you ask for it. The clip behind the
-current one is opened and buffered while the user is still watching, so reaching it is a hand-over
-rather than a cold start.
+**2. ⏭️ Preload the next clip.** Pass `nextAssetId` and that clip is opened and buffered while the
+user is still watching, so reaching it is a hand-over rather than a cold start.
 
-The last one explains why `isVisible` is a parameter rather than something you express with a
-modifier. The player is a native view that composites itself, on its own thread. A `graphicsLayer`
-alpha or clip around it is a statement about the Compose tree that the surface is under no
-obligation to honour, so hiding it has to be said in a language the view speaks: `visibility` on
-Android, `hidden` on iOS. The same goes for `scale`, which is why there is no `ContentScale`
-parameter. Pass `state.hasRenderedFirstFrame` and draw a still underneath.
+**3. 👁️ Hide it with `isVisible`, not a modifier.** The player is a native view that draws itself
+on its own thread. A `graphicsLayer` alpha or clip is a statement about the Compose tree that the
+surface is under no obligation to honour. Hiding has to happen in the view's own terms
+(`visibility` on Android, `hidden` on iOS), and the same goes for `scale`, which is why there's no
+`ContentScale` parameter. Pass `state.hasRenderedFirstFrame` and draw a still underneath.
 
-On Android this is a `TextureView` rather than the usual `SurfaceView`, so the player survives
-being translated or scaled inside a `graphicsLayer` without punching through and blinking.
+> [!NOTE]
+> On Android the player is a `TextureView` rather than the usual `SurfaceView`, so it survives
+> being translated or scaled inside a `graphicsLayer` without punching through and blinking.
 
 ---
 
-## Dependency injection
+## 📱 Sample app
 
-Nothing in Pikto assumes a DI framework. Both factories are plain functions, so wire them however
-you already do. With Koin:
+A runnable gallery that uses all three artifacts lives in [`sample/`](sample/): a grid, a
+full-screen viewer, video playback, and deleting one or many. Android and iOS share one
+`commonMain` source set.
+
+```bash
+./gradlew :sample:androidApp:installDebug     # 🤖 Android
+open sample/iosApp/iosApp.xcodeproj           # 🍎 iOS
+```
+
+More in [`sample/README.md`](sample/README.md).
+
+## 🔌 Dependency injection
+
+Pikto doesn't assume a DI framework. Both factories are plain functions, so wire them however you
+already do. With Koin:
 
 ```kotlin
 val piktoModule = module {
@@ -409,10 +433,10 @@ On Android both no-argument factories work from `Application.onCreate` onwards, 
 that initializer out, use the `PhotoLibrary(context)` and `PhotoImageLoader(context, config)`
 overloads in `androidMain`.
 
-## Reaching past Pikto
+## 🚪 Reaching past Pikto
 
-Pikto does not wrap all of MediaStore or all of PhotoKit, and it does not try to. When you need
-something it does not cover, take the platform handle and go:
+Pikto doesn't wrap all of MediaStore or PhotoKit, and doesn't try to. When you need something it
+doesn't cover, take the platform handle and go:
 
 ```kotlin
 // androidMain
@@ -422,32 +446,38 @@ val uri: Uri = photoAssetUri(asset.id)   // Hand to Coil, ExoPlayer, a share she
 val phAsset: PHAsset? = phAssetFor(asset.id)   // Live photos, location, favouriting.
 ```
 
-## What Pikto does not do
+## 🚫 What Pikto doesn't do
 
-Being clear about this up front, because these are the things you will look for:
+Up front, because these are the things you'll go looking for:
 
-- **Writing.** No saving, importing, editing or favouriting. Read and delete only.
-- **Change observation.** No callback when the library changes under you. Re-stream to refresh.
-- **Desktop, web, macOS.** Android and iOS. Consistency across two platforms beats a longer list.
-- **Live Photos, RAW, depth data, bursts.** A burst appears as its individual frames.
-- **Cloud fetch progress.** iCloud downloads are allowed and awaited, but there is no progress
-  callback for one.
+- ✏️ **Writing.** No saving, importing, editing or favouriting. Read and delete only.
+- 🔔 **Change observation.** No callback when the library changes under you. Re-stream to refresh.
+- 🖥️ **Desktop, web, macOS.** Android and iOS only: consistency across two platforms beats a
+  longer list.
+- 📷 **Live Photos, RAW, depth data, bursts.** A burst appears as its individual frames.
+- ☁️ **Cloud fetch progress.** iCloud downloads are allowed and awaited, but there's no progress
+  callback.
 
-Several of these are open to being added. Say so in an issue.
+Several of these could be added. **Say so in an issue.** 🙌
 
-## Requirements
+## ✅ Requirements
 
-- Kotlin 2.4.20+
-- Android minSdk 24, compileSdk 37
-- iOS 15+. Kotlin/Native sets this floor, not Pikto: `minVersion.ios` is 15.0 as of Kotlin 2.4,
-  having been 14.0 in 2.3 and 12.0 in 2.2. Nothing Pikto does can lower it.
-- Compose Multiplatform 1.12+ for `pikto-images` and `pikto-video`
+| | |
+| --- | --- |
+| **Kotlin** | 2.4.20+ |
+| **Android** | minSdk 24, compileSdk 37 |
+| **iOS** | 15+ |
+| **Compose Multiplatform** | 1.12+ (for `pikto-images` and `pikto-video`) |
 
-## Contributing
+> [!NOTE]
+> The iOS 15 floor comes from Kotlin/Native, not Pikto: its `minVersion.ios` is 15.0 as of
+> Kotlin 2.4, after 14.0 in 2.3 and 12.0 in 2.2. Nothing Pikto does can lower it.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and pull requests welcome, especially platform
-edge cases from real devices.
+## 🤝 Contributing
 
-## License
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and pull requests are welcome, *especially*
+platform edge cases from real devices.
+
+## 📄 License
 
 Apache 2.0. See [LICENSE](LICENSE).
