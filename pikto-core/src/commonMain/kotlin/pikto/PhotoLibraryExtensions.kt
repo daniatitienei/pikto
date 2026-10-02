@@ -14,6 +14,15 @@ import kotlinx.coroutines.flow.toList
  *     library.collectAssets().collect { assets -> render(assets) }
  * }
  * ```
+ *
+ * Prefer this to [PhotoLibrary.permissionStatus] whenever a refusal should send the user to
+ * Settings. A refusal is only distinguishable from "never asked" once a prompt has been shown,
+ * so this is the call that reports [PhotoPermission.DENIED] on both platforms rather than on iOS
+ * alone. Both platforms answer a prompt with a settled state, so
+ * [PhotoPermission.NOT_DETERMINED] coming back from here is not an outcome worth designing for.
+ *
+ * On Android showing the prompt needs an activity, so `installPikto()` must have been called on
+ * it. See [PhotoLibrary.requestPermission].
  */
 public suspend fun PhotoLibrary.ensurePermission(): PhotoPermission {
     val status = permissionStatus()

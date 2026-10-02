@@ -1,17 +1,17 @@
 [versions]
-agp = "9.0.1"
-android-compileSdk = "36"
+agp = "9.4.0"
+android-compileSdk = "37"
 android-minSdk = "24"
 androidx-activity = "1.13.0"
-androidx-core = "1.17.0"
-androidx-lifecycle = "2.11.0-beta01"
+androidx-core = "1.19.0"
+androidx-lifecycle = "2.11.0"
 androidx-startup = "1.2.0"
-composeMultiplatform = "1.11.1"
-dokka = "2.0.0"
-kotlin = "2.4.10"
-kotlinxCoroutines = "1.10.2"
-mavenPublish = "0.30.0"
-media3 = "1.8.0"
+composeMultiplatform = "1.12.0"
+dokka = "2.2.0"
+kotlin = "2.4.20"
+kotlinxCoroutines = "1.11.0"
+mavenPublish = "0.37.0"
+media3 = "1.11.1"
 
 [libraries]
 androidx-activity = { module = "androidx.activity:activity", version.ref = "androidx-activity" }

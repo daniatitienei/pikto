@@ -1,4 +1,3 @@
-import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -42,7 +41,7 @@ kotlin {
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = false)
+    publishToMavenCentral(automaticRelease = false)
     // Only in CI: a local publishToMavenLocal must not be blocked by the absence of keys.
     if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
     pom {

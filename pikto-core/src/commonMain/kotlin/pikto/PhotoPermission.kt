@@ -9,7 +9,13 @@ package pikto
  * retry.
  */
 public enum class PhotoPermission {
-    /** Never asked. Nothing has been shown to the user yet. */
+    /**
+     * Nothing is readable and no prompt has resolved the question yet.
+     *
+     * On iOS that means exactly "never asked". On Android it also covers "asked and refused",
+     * because the platform records only the absence of the permission, not the refusal. See
+     * [PhotoLibrary.permissionStatus].
+     */
     NOT_DETERMINED,
 
     /** The whole library is readable. */
@@ -18,7 +24,13 @@ public enum class PhotoPermission {
     /** Only the assets the user hand-picked are readable. */
     LIMITED,
 
-    /** The user said no, or a policy says no. Asking again will not show a system prompt. */
+    /**
+     * The user said no, or a policy says no. Asking again will not show a system prompt.
+     *
+     * Reachable from [PhotoLibrary.permissionStatus] on iOS only. On Android a refusal is
+     * indistinguishable from never having asked until a prompt has been shown, so it surfaces
+     * here only through [PhotoLibrary.requestPermission] or [ensurePermission].
+     */
     DENIED;
 
     /** True when a [PhotoLibrary.stream] will produce something rather than nothing. */

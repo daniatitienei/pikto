@@ -20,7 +20,24 @@ import kotlinx.coroutines.flow.Flow
  */
 public interface PhotoLibrary {
 
-    /** What the app is allowed to see right now. Never shows UI. */
+    /**
+     * What the app is allowed to see right now. Never shows UI.
+     *
+     * The two readable states, [PhotoPermission.GRANTED] and [PhotoPermission.LIMITED], mean the
+     * same thing on both platforms. The two unreadable ones do not, and the difference is not one
+     * Pikto can paper over:
+     *
+     * - On iOS this returns [PhotoPermission.DENIED] for a user who has refused, because PhotoKit
+     *   records the refusal.
+     * - On Android it returns [PhotoPermission.NOT_DETERMINED] for both "never asked" and
+     *   "refused". The permission is simply absent in each case and the platform keeps no record
+     *   that distinguishes them.
+     *
+     * So do not branch on [PhotoPermission.DENIED] here and expect it to fire on Android: it
+     * cannot. Only [requestPermission] can tell the two apart, by showing the prompt and seeing
+     * what comes back, which is why [ensurePermission] is the call to reach for when the answer
+     * decides whether you send the user to Settings.
+     */
     public suspend fun permissionStatus(): PhotoPermission
 
     /**

@@ -32,8 +32,8 @@ fun Gallery() {
 }
 ```
 
-That is the whole thing on both platforms. No `expect`/`actual` of your own, no permission
-plumbing in shared code, no separate Swift file.
+That is the whole thing, on both platforms. Nothing above it is Android-only or iOS-only: no
+`expect`/`actual` of your own to maintain, and no Swift file on the side.
 
 ---
 
@@ -44,16 +44,17 @@ Photo library access is one of the last big holes in Kotlin Multiplatform. `Medi
 an asset can belong to more than one album, who shows the delete confirmation, and what a
 thumbnail costs. Writing that twice per app is the norm, and both copies drift.
 
-Pikto is the abstraction, taken from a shipping photo cleaner and generalised. It is opinionated
-about the two things that actually go wrong at scale:
+Pikto is the abstraction, taken from a shipping photo cleaner and generalised. Two things go wrong
+at scale, and it is opinionated about both.
 
-**Nothing is loaded eagerly.** The library arrives in batches you can paint as they land, with the
-first batch deliberately tiny because it is your entire time-to-first-pixel budget. A library of
-fifty thousand assets never exists as one list you had to wait for.
+The first is eager loading, which Pikto never does. The library arrives in batches you can paint as
+they land, and the first batch is deliberately tiny because it is your entire time-to-first-pixel
+budget. A library of fifty thousand assets never exists as one list you had to wait for.
 
-**Decoding is shared, bounded and cached.** One decode per asset no matter how many composables
-ask, a hard cap on how many run at once, separate memory budgets for thumbnails and full images,
-and an on-disk thumbnail cache so a cold start is a file read rather than a re-decode.
+The second is decoding, which is shared, bounded and cached. One decode per asset, no matter how
+many composables ask for it, with a hard cap on how many run at once. Thumbnails and full images
+get separate memory budgets, and thumbnails also get an on-disk cache, so a cold start is a file
+read rather than a re-decode.
 
 ## Modules
 
@@ -85,9 +86,9 @@ See [`sample/README.md`](sample/README.md).
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.daniatitienei:pikto-core:1.0.0")
-            implementation("io.github.daniatitienei:pikto-images:1.0.0")
-            implementation("io.github.daniatitienei:pikto-video:1.0.0")
+            implementation("io.github.daniatitienei:pikto-core:1.0.1")
+            implementation("io.github.daniatitienei:pikto-images:1.0.1")
+            implementation("io.github.daniatitienei:pikto-video:1.0.1")
         }
     }
 }
@@ -151,16 +152,22 @@ val library = PhotoLibrary()
 ### Permission
 
 ```kotlin
-when (val status = library.ensurePermission()) {
+when (library.ensurePermission()) {
     PhotoPermission.GRANTED -> loadEverything()
     PhotoPermission.LIMITED -> loadWhatWeCanAndOfferToWiden()
     PhotoPermission.DENIED -> sendToSettings()
-    PhotoPermission.NOT_DETERMINED -> Unit // The user dismissed without answering.
+    PhotoPermission.NOT_DETERMINED -> Unit // A prompt always settles the question.
 }
 ```
 
 `ensurePermission()` returns the current status, prompting only if nobody has been asked yet.
-`status.canRead` collapses GRANTED and LIMITED for the common case.
+`canRead` collapses GRANTED and LIMITED for the common case.
+
+Reach for it rather than `permissionStatus()` whenever a refusal should send the user to Settings.
+`permissionStatus()` shows no UI, and that is exactly why it cannot tell a refusal from a question
+never asked: iOS records the refusal and reports `DENIED`, while Android records only that the
+permission is missing and reports `NOT_DETERMINED` in both cases. Showing the prompt is what
+separates them. So `DENIED` is dependable after `ensurePermission()`, and iOS-only before it.
 
 `LIMITED` is a permanent state on both platforms, not a step towards `GRANTED`. The user picked
 some photos and everything else stays invisible. Treat it as a working state and offer a way to
@@ -203,14 +210,15 @@ library.collectAssets(query).collect { videos -> }
 
 `MediaQuery.Images` and `MediaQuery.Videos` are presets for the common two.
 
-**`includeSizes`** is worth understanding. On Android the file size comes free in the same cursor
-row. On iOS every size is a separate disk read through `PHAssetResource`, and that is the
-difference between enumerating a large library in milliseconds and in seconds. So sizes always
-arrive *after* the assets, and if nothing on screen shows bytes, turn them off.
+`includeSizes` is the one worth understanding. On Android the file size comes free in the same
+cursor row, so it costs nothing either way. On iOS every size is a separate disk read through
+`PHAssetResource`, which is the difference between enumerating a large library in milliseconds and
+in seconds. Sizes therefore always arrive *after* the assets, and if nothing on screen shows bytes,
+turn them off.
 
-**`includeAlbums`** is off by default because it is the most expensive pass on iOS by a wide
-margin. PhotoKit has no way to ask an asset which collections hold it, so the only way to build
-the mapping is to walk every collection.
+`includeAlbums` is off for the same reason taken further: it is the most expensive pass on iOS by a
+wide margin. PhotoKit has no way to ask an asset which collections hold it, so building the mapping
+means walking every collection.
 
 ### The raw stream
 
@@ -278,11 +286,9 @@ PhotoImage(
 )
 ```
 
-Two sizes, and they take different paths:
-
-- **`ImageSize.Thumbnail(sidePx)`** goes through the platform's own thumbnailing and is cached to
-  disk between launches, so the second cold start is a file read.
-- **`ImageSize.Full`** asks the platform to render at screen resolution, memory-cached only.
+The two sizes take different paths. `ImageSize.Thumbnail(sidePx)` goes through the platform's own
+thumbnailing and is cached to disk between launches, so the second cold start is a file read.
+`ImageSize.Full` asks the platform to render at screen resolution and is memory-cached only.
 
 The size is part of the cache key, so `Thumbnail(320)` and `Thumbnail(321)` share nothing. Pick a
 small number of sizes and reuse them.
@@ -363,21 +369,23 @@ Slider(
 )
 ```
 
-Three things this handles that a hand-rolled player usually does not:
+A hand-rolled player tends to get three things wrong here.
 
-**Keep it mounted.** A `null` `assetId` means "nothing to play", and the player is kept alive and
-idle rather than torn down. Building and releasing a player is main-thread work measured in
-hundreds of milliseconds on both platforms, so doing it per clip freezes the screen. Keep the
-composable in the tree and swap the id underneath it.
+Mounting is the one that costs the most. A `null` `assetId` means "nothing to play", and the player
+is kept alive and idle rather than torn down. Building and releasing a player is main-thread work
+measured in hundreds of milliseconds on both platforms, so doing it per clip freezes the screen.
+Keep the composable in the tree and swap the id underneath it.
 
-**`nextAssetId` preloads.** The clip behind the current one is opened and buffered while the user
-is still watching, so reaching it is a hand-over rather than a cold start.
+Preloading is the cheapest win, and `nextAssetId` is where you ask for it. The clip behind the
+current one is opened and buffered while the user is still watching, so reaching it is a hand-over
+rather than a cold start.
 
-**`isVisible` is not a modifier.** The player is a native view that composites itself, on its own
-thread. A `graphicsLayer` alpha or clip around it is a statement about the Compose tree that the
-surface is under no obligation to honour, so hiding it has to be said in a language the view
-speaks: `visibility` on Android, `hidden` on iOS. Same for `scale`, which is why there is no
-`ContentScale` parameter. Pass `state.hasRenderedFirstFrame` and draw a still underneath.
+The last one explains why `isVisible` is a parameter rather than something you express with a
+modifier. The player is a native view that composites itself, on its own thread. A `graphicsLayer`
+alpha or clip around it is a statement about the Compose tree that the surface is under no
+obligation to honour, so hiding it has to be said in a language the view speaks: `visibility` on
+Android, `hidden` on iOS. The same goes for `scale`, which is why there is no `ContentScale`
+parameter. Pass `state.hasRenderedFirstFrame` and draw a still underneath.
 
 On Android this is a `TextureView` rather than the usual `SurfaceView`, so the player survives
 being translated or scaled inside a `graphicsLayer` without punching through and blinking.
@@ -429,10 +437,11 @@ Several of these are open to being added. Say so in an issue.
 
 ## Requirements
 
-- Kotlin 2.4+
-- Android minSdk 24, compileSdk 36
-- iOS 13+ (iOS 14+ for the `LIMITED` permission state)
-- Compose Multiplatform 1.11+ for `pikto-images` and `pikto-video`
+- Kotlin 2.4.20+
+- Android minSdk 24, compileSdk 37
+- iOS 15+. Kotlin/Native sets this floor, not Pikto: `minVersion.ios` is 15.0 as of Kotlin 2.4,
+  having been 14.0 in 2.3 and 12.0 in 2.2. Nothing Pikto does can lower it.
+- Compose Multiplatform 1.12+ for `pikto-images` and `pikto-video`
 
 ## Contributing
 
